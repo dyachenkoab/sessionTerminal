@@ -17,11 +17,11 @@ class Edit : public QTextEdit
 {
     Q_OBJECT
 
-    DBusHandler *handler = nullptr;
+    DBusHandler *m_handler = nullptr;
 
 public:
     Edit( QWidget *parent = nullptr );
-    ~Edit() = default;
+    ~Edit(){ qInfo() << "edit stopped"; }// = default;
     void setHandler( DBusHandler *value );
 
 private:

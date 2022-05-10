@@ -4,7 +4,7 @@ MainWindow::MainWindow( const QString &privateSession, bool isolated, QWidget *p
     : QMainWindow( parent )
 {
     const int idSize = 30;
-    id		 = QUuid::createUuid()
+    m_id		 = QUuid::createUuid()
          .toString()
          .replace( QString( "-" ), QString( "" ) )
          .remove( 0, 1 )
@@ -12,15 +12,15 @@ MainWindow::MainWindow( const QString &privateSession, bool isolated, QWidget *p
 
     setupTextActions();
 
-    textEdit = new Edit( this );
-    handler	 = new DBusHandler( id, privateSession, isolated, textEdit );
-    textEdit->setHandler( handler );
+    m_textEdit = new Edit( this );
+    m_handler	 = new DBusHandler( m_id, privateSession, isolated, m_textEdit );
+    m_textEdit->setHandler( m_handler );
 
-    QObject::connect( textEdit, &QTextEdit::currentCharFormatChanged, this,
+    QObject::connect( m_textEdit, &QTextEdit::currentCharFormatChanged, this,
               &MainWindow::currentCharFormatChanged );
 
-    setCentralWidget( textEdit );
-    textEdit->setFocus();
+    setCentralWidget( m_textEdit );
+    m_textEdit->setFocus();
 
     setToolbar();
 }
@@ -33,106 +33,107 @@ void MainWindow::setupTextActions()
 
     const QIcon boldIcon =
         QIcon::fromTheme( "format-text-bold", QIcon( ":/images/textbold.png" ) );
-    actionTextBold = menu->addAction( boldIcon, tr( "&Bold" ), this, &MainWindow::textBold );
-    actionTextBold->setShortcut( Qt::CTRL + Qt::Key_B );
-    actionTextBold->setPriority( QAction::LowPriority );
+    m_actionTextBold = menu->addAction( boldIcon, tr( "&Bold" ), this, &MainWindow::textBold );
+    m_actionTextBold->setShortcut( Qt::CTRL + Qt::Key_B );
+    m_actionTextBold->setPriority( QAction::LowPriority );
     QFont bold;
     bold.setBold( true );
-    actionTextBold->setFont( bold );
-    tb->addAction( actionTextBold );
-    actionTextBold->setCheckable( true );
+    m_actionTextBold->setFont( bold );
+    tb->addAction( m_actionTextBold );
+    m_actionTextBold->setCheckable( true );
 
     const QIcon underlineIcon =
         QIcon::fromTheme( "format-text-underline", QIcon( ":/images/textunder.png" ) );
-    actionTextUnderline =
+    m_actionTextUnderline =
         menu->addAction( underlineIcon, tr( "&Underline" ), this, &MainWindow::textUnderline );
-    actionTextUnderline->setShortcut( Qt::CTRL + Qt::Key_U );
-    actionTextUnderline->setPriority( QAction::LowPriority );
+    m_actionTextUnderline->setShortcut( Qt::CTRL + Qt::Key_U );
+    m_actionTextUnderline->setPriority( QAction::LowPriority );
     QFont underline;
     underline.setUnderline( true );
-    actionTextUnderline->setFont( underline );
-    tb->addAction( actionTextUnderline );
-    actionTextUnderline->setCheckable( true );
+    m_actionTextUnderline->setFont( underline );
+    tb->addAction( m_actionTextUnderline );
+    m_actionTextUnderline->setCheckable( true );
 
     const QIcon italicIcon =
         QIcon::fromTheme( "format-text-italic", QIcon( ":/images/textitalic.png" ) );
-    actionTextItalic =
+    m_actionTextItalic =
         menu->addAction( italicIcon, tr( "&Italic" ), this, &MainWindow::textItalic );
-    actionTextItalic->setPriority( QAction::LowPriority );
-    actionTextItalic->setShortcut( Qt::CTRL + Qt::Key_I );
+    m_actionTextItalic->setPriority( QAction::LowPriority );
+    m_actionTextItalic->setShortcut( Qt::CTRL + Qt::Key_I );
     QFont italic;
     italic.setItalic( true );
-    actionTextItalic->setFont( italic );
-    tb->addAction( actionTextItalic );
-    actionTextItalic->setCheckable( true );
+    m_actionTextItalic->setFont( italic );
+    tb->addAction( m_actionTextItalic );
+    m_actionTextItalic->setCheckable( true );
 
     menu->addSeparator();
 
-    comboFont = new QFontComboBox( tb );
-    tb->addWidget( comboFont );
-
-    connect( comboFont, QOverload<const QString &>::of( &QComboBox::activated ), this,
+    m_comboFont = new QFontComboBox( tb );
+    tb->addWidget( m_comboFont );
+//    connect( comboFont, &QComboBox::textActivated, this, &MainWindow::textFamily );
+    connect( m_comboFont, QOverload<const QString &>::of( &QComboBox::activated ), this,
          &MainWindow::textFamily );
 
-    comboSize = new QComboBox( tb );
-    comboSize->setObjectName( "comboSize" );
-    tb->addWidget( comboSize );
-    comboSize->setEditable( true );
+    m_comboSize = new QComboBox( tb );
+    m_comboSize->setObjectName( "comboSize" );
+    tb->addWidget( m_comboSize );
+    m_comboSize->setEditable( true );
 
     const QList<int> standardSizes = QFontDatabase::standardSizes();
     foreach ( int size, standardSizes )
-        comboSize->addItem( QString::number( size ) );
-    comboSize->setCurrentIndex( standardSizes.indexOf( QApplication::font().pointSize() ) );
+        m_comboSize->addItem( QString::number( size ) );
+    m_comboSize->setCurrentIndex( standardSizes.indexOf( QApplication::font().pointSize() ) );
 
-    connect( comboSize, QOverload<const QString &>::of( &QComboBox::activated ), this,
+//    connect( comboSize, &QComboBox::textActivated, this, &MainWindow::textSize );
+    connect( m_comboSize, QOverload<const QString &>::of( &QComboBox::activated ), this,
          &MainWindow::textSize );
 
     QPixmap pix( 16, 16 );
     pix.fill( Qt::black );
-    actionTextColor = menu->addAction( pix, tr( "&Color..." ), this, &MainWindow::textColor );
-    tb->addAction( actionTextColor );
+    m_actionTextColor = menu->addAction( pix, tr( "&Color..." ), this, &MainWindow::textColor );
+    tb->addAction( m_actionTextColor );
 }
 
 //-------------toolbar events-------------------------
 void MainWindow::textBold() const
 {
-    handler->sendMessage( actionTextBold->isChecked(), "setBold" );
+    m_handler->sendMessage( m_actionTextBold->isChecked(), "setBold" );
 }
 
 void MainWindow::textUnderline() const
 {
-    handler->sendMessage( actionTextUnderline->isChecked(), "setUnderline" );
+    m_handler->sendMessage( m_actionTextUnderline->isChecked(), "setUnderline" );
 }
 
 void MainWindow::textItalic() const
 {
-    handler->sendMessage( actionTextItalic->isChecked(), "setItalic" );
+    m_handler->sendMessage( m_actionTextItalic->isChecked(), "setItalic" );
 }
 
 void MainWindow::textFamily( const QString &f ) const
 {
-    handler->sendMessage( f, "textFamily" );
+    m_handler->sendMessage( f, "textFamily" );
 }
 
 void MainWindow::textSize( const QString &p ) const
 {
-    handler->sendMessage( p, "textSize" );
+    m_handler->sendMessage( p, "textSize" );
 }
 
 void MainWindow::textColor()
 {
-    QColor col = QColorDialog::getColor( textEdit->textColor(), this );
+    QColor col = QColorDialog::getColor( m_textEdit->textColor(), this );
     if ( !col.isValid() )
         return;
     col.name();
-    handler->sendMessage( col.name(), "textColor" );
+    m_handler->sendMessage( col.name(), "textColor" );
 }
 //--------------------------------------
 void MainWindow::colorChanged( const QColor &c )
 {
     QPixmap pix( 16, 16 );
     pix.fill( c );
-    actionTextColor->setIcon( pix );
+    m_actionTextColor->setIcon( pix );
 }
 
 void MainWindow::currentCharFormatChanged( const QTextCharFormat &format )
@@ -143,24 +144,24 @@ void MainWindow::currentCharFormatChanged( const QTextCharFormat &format )
 
 void MainWindow::fontChanged( const QFont &f )
 {
-    comboFont->setCurrentIndex( comboFont->findText( QFontInfo( f ).family() ) );
-    comboSize->setCurrentIndex( comboSize->findText( QString::number( f.pointSize() ) ) );
-    actionTextBold->setChecked( f.bold() );
-    actionTextItalic->setChecked( f.italic() );
-    actionTextUnderline->setChecked( f.underline() );
+    m_comboFont->setCurrentIndex( m_comboFont->findText( QFontInfo( f ).family() ) );
+    m_comboSize->setCurrentIndex( m_comboSize->findText( QString::number( f.pointSize() ) ) );
+    m_actionTextBold->setChecked( f.bold() );
+    m_actionTextItalic->setChecked( f.italic() );
+    m_actionTextUnderline->setChecked( f.underline() );
 }
 
 void MainWindow::setToolbar()
 {
-    QVariantList state = handler->getToolbarState();
+    QVariantList state = m_handler->getToolbarState();
     if ( !state.isEmpty() ) {
-        actionTextBold->setChecked( state.at( BOLD ).toBool() );
-        actionTextUnderline->setChecked( state.at( UNDERLINE ).toBool() );
-        actionTextItalic->setChecked( state.at( ITALIC ).toBool() );
-        comboSize->setCurrentText( state.at( SIZE ).toString() );
+        m_actionTextBold->setChecked( state.at( BOLD ).toBool() );
+        m_actionTextUnderline->setChecked( state.at( UNDERLINE ).toBool() );
+        m_actionTextItalic->setChecked( state.at( ITALIC ).toBool() );
+        m_comboSize->setCurrentText( state.at( SIZE ).toString() );
         QFont font;
         font.fromString( state.at( FONT ).toString() );
-        comboFont->setCurrentFont( font );
+        m_comboFont->setCurrentFont( font );
         QColor color( state.at( COLOR ).toString() );
         colorChanged( color );
     }

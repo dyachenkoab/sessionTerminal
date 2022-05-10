@@ -2,8 +2,8 @@
 
 void Edit::setHandler( DBusHandler *value )
 {
-    if ( !handler )
-        handler = value;
+    if ( !m_handler )
+        m_handler = value;
 }
 
 Edit::Edit( QWidget *parent ) : QTextEdit( parent )
@@ -14,27 +14,27 @@ Edit::Edit( QWidget *parent ) : QTextEdit( parent )
 void Edit::keyPressed( const QString &key ) const
 {
     QVariantList arg = prepareCharInfo( key );
-    handler->sendMessageWithID( arg, "keyPress" );
+    m_handler->sendMessageWithID( arg, "keyPress" );
 }
 
 void Edit::allSelected() const
 {
-    handler->sendMessageWithID( "selectAll" );
+    m_handler->sendMessageWithID( "selectAll" );
 }
 
 void Edit::cursorChanged() const
 {
-    handler->sendMessageWithID( textCursor().position(), "cursorPosition" );
+    m_handler->sendMessageWithID( textCursor().position(), "cursorPosition" );
 }
 
 void Edit::charRemoved() const
 {
-    handler->sendMessageWithID( "removeChar" );
+    m_handler->sendMessageWithID( "removeChar" );
 }
 
 void Edit::charDeleted() const
 {
-    handler->sendMessageWithID( "deleteChar" );
+    m_handler->sendMessageWithID( "deleteChar" );
 }
 
 //---------------------------------------------------
@@ -53,7 +53,7 @@ void Edit::changeSelection() const
 {
     QTextCursor cursor( textCursor() );
     if ( cursor.hasSelection() ) {
-        handler->sendMessageWithID( cursor.selectionStart(), cursor.selectionEnd(),
+        m_handler->sendMessageWithID( cursor.selectionStart(), cursor.selectionEnd(),
                         "setSelection" );
     }
 }
@@ -71,10 +71,10 @@ void Edit::insertFromMimeData( const QMimeData *data )
     //Узкое место, нужна система с управлением разделённой памятью
     if ( data->hasHtml() ) {
         insertHtml( data->html() );
-        handler->sendMessageWithID( data->html(), "insertHtml" );
+        m_handler->sendMessageWithID( data->html(), "insertHtml" );
     } else if ( data->hasText() ) {
         insertPlainText( data->text() );
-        handler->sendMessageWithID( data->text(), "insertText" );
+        m_handler->sendMessageWithID( data->text(), "insertText" );
     }
 }
 

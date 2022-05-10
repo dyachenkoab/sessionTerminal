@@ -17,22 +17,22 @@ class Edit;
 class DBusHandler : public QObject
 {
     Q_OBJECT
-    QDBusConnection *conn;
-    QDBusInterface *iface;
-    QStringList names;
+    QScopedPointer<QDBusConnection> m_conn;
+    QScopedPointer<QDBusInterface> m_iface;
+    QStringList m_names;
 
-    Edit *textEdit;
-    QSharedMemory sharedMemory;
+    Edit *m_textEdit;
+    QSharedMemory m_sharedMemory;
 
-    const QString id;
-    const bool isolated;
+    const QString m_id;
+    const bool m_isolated;
 
-    QVariantList toolbarState;
+    QVariantList m_toolbarState;
 
-    QString obj;
-    QString i_face;
-    QString service;
-    QString ranged;
+    QString m_objName;
+    QString m_ifaceName;
+    QString m_serviceName;
+    QString m_rangedName;
 
 public:
     DBusHandler( const QString &id, const QString &privateSession, bool isolated,
@@ -48,16 +48,16 @@ public:
     template <typename T>
     void sendMessageWithID( const T &args, const QString &signalName ) const
     {
-        QDBusMessage msg = QDBusMessage::createSignal( obj, i_face, signalName );
-        msg << id << args;
-        conn->send( msg );
+        QDBusMessage msg = QDBusMessage::createSignal( m_objName, m_ifaceName, signalName );
+        msg << m_id << args;
+        m_conn->send( msg );
     }
 
     template <typename T> void sendMessage( const T &args, const QString &signalName ) const
     {
-        QDBusMessage msg = QDBusMessage::createSignal( obj, i_face, signalName );
+        QDBusMessage msg = QDBusMessage::createSignal( m_objName, m_ifaceName, signalName );
         msg << args;
-        conn->send( msg );
+        m_conn->send( msg );
     }
 
 public slots:

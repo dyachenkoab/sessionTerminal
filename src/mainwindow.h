@@ -28,16 +28,16 @@ public:
     ~MainWindow() = default;
 
 private:
-    Edit *textEdit;
-    DBusHandler *handler;
-    QString id;
+    Edit *m_textEdit = nullptr;
+    DBusHandler *m_handler = nullptr;
+    QString m_id;
 
-    QAction *actionTextBold;
-    QAction *actionTextUnderline;
-    QAction *actionTextItalic;
-    QAction *actionTextColor;
-    QFontComboBox *comboFont;
-    QComboBox *comboSize;
+    QAction *m_actionTextBold;
+    QAction *m_actionTextUnderline;
+    QAction *m_actionTextItalic;
+    QAction *m_actionTextColor;
+    QFontComboBox *m_comboFont;
+    QComboBox *m_comboSize;
 
 private:
     void setupTextActions();
