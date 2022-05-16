@@ -24,10 +24,19 @@ void Edit::cursorChanged() const
         m_handler->sendMessageWithID( textCursor().position(), "cursorPosition" );
 }
 
-void Edit::textChange() const
+void Edit::textChange()
 {
-    if ( hasFocus() )
+    if ( hasFocus() || cameOutside ) {
+        cameOutside = false;
         sendHtml();
+    }
+}
+
+void Edit::dropEvent( QDropEvent *e )
+{
+    QTextEdit::dropEvent( e );
+    cameOutside = true;
+    textChange();
 }
 
 //---------------------------------------------------
@@ -36,7 +45,6 @@ QVariantList Edit::prepareCharInfo() const
 {
     CharInfo charInfo;
     charInfo.text = toHtml();
-    charInfo.pos = textCursor().position();
+    charInfo.pos  = textCursor().position();
     return QVariantList() << QVariant::fromValue( charInfo );
 }
-

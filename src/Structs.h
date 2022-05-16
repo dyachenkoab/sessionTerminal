@@ -9,7 +9,7 @@ struct CharInfo {
     QString text;
     int pos = -1;
 
-    CharInfo()			  = default;
+    CharInfo() = default;
     ~CharInfo()			  = default;
     CharInfo( const CharInfo &other ) = default;
     CharInfo &operator=( const CharInfo &other ) = default;

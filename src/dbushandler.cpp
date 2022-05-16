@@ -129,7 +129,7 @@ void DBusHandler::mergeFormatOnWordOrSelection( const QTextCharFormat &format )
     cursor.mergeCharFormat( format );
     m_textEdit->mergeCurrentCharFormat( format );
 }
-//------------------------
+//-----text format---------
 
 QVariantList DBusHandler::loadToSharedMemory()
 {

@@ -18,6 +18,7 @@ class Edit : public QTextEdit
     Q_OBJECT
 
     DBusHandler *m_handler = nullptr;
+    bool cameOutside = false;
 
 public:
     Edit( QWidget *parent = nullptr );
@@ -25,9 +26,14 @@ public:
     void setHandler( DBusHandler *value );
     void sendHtml() const;
 
+protected:
+    void dropEvent(QDropEvent *e) override;
+
 private:
     QVariantList prepareCharInfo() const;
     void cursorChanged() const;
-    void textChange() const;};
+    void textChange();
+
+};
 
 #endif // EDIT_H
