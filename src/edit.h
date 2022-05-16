@@ -21,22 +21,13 @@ class Edit : public QTextEdit
 
 public:
     Edit( QWidget *parent = nullptr );
-    ~Edit(){ qInfo() << "edit stopped"; }// = default;
+    ~Edit() = default;
     void setHandler( DBusHandler *value );
+    void sendHtml() const;
 
 private:
-    QVariantList prepareCharInfo( const QString &key ) const;
-    void keyPressed( const QString &key ) const;
-    void allSelected() const;
+    QVariantList prepareCharInfo() const;
     void cursorChanged() const;
-    void charRemoved() const;
-    void charDeleted() const;
-    void changeSelection() const;
-
-protected:
-    void mouseReleaseEvent( QMouseEvent *event ) override;
-    void insertFromMimeData( const QMimeData *data ) override;
-    void keyReleaseEvent( QKeyEvent *event ) override;
-};
+    void textChange() const;};
 
 #endif // EDIT_H

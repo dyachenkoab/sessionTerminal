@@ -26,6 +26,7 @@ class DBusHandler : public QObject
 
     const QString m_id;
     const bool m_isolated;
+    bool cameOutside = false;
 
     QVariantList m_toolbarState;
 
@@ -60,22 +61,12 @@ public:
         m_conn->send( msg );
     }
 
+public:
+    void mergeFormatOnWordOrSelection( const QTextCharFormat &format );
+
 public slots:
-    void changeKey( const QString &id, const QVariantList &list );
-    void selectAll( const QString &id );
-    void removeChar( const QString &id );
-    void deleteChar( const QString &id );
+    void textChange( const QString &id, const QVariantList &list );
     void changeCursorPosition( const QString &id, const int &pos );
-    void setSelection( const QString &id, int start, int stop );
-
-    void htmlInsert( const QString &id, const QString &html );
-    void textInsert( const QString &id, const QString &text );
-
-    void bolded( bool bold );
-    void underlined( bool underline );
-    void italiced( bool italic );
-    void textFamily( const QString &f );
-    void textSize( const QString &p );
     void textColored( const QString &c );
 
     QVariantList loadToSharedMemory();
@@ -87,7 +78,6 @@ private:
     void setupDBusParameters( const QString &privateSession );
     void registerClass();
     void setupConnections();
-    void mergeFormatOnWordOrSelection( const QTextCharFormat &format );
     void feedTextEditor();
     void loadFromMemory();
 };

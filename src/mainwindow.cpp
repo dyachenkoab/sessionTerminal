@@ -5,15 +5,15 @@ MainWindow::MainWindow( const QString &privateSession, bool isolated, QWidget *p
 {
     const int idSize = 30;
     m_id		 = QUuid::createUuid()
-         .toString()
-         .replace( QString( "-" ), QString( "" ) )
-         .remove( 0, 1 )
-         .left( idSize );
+           .toString()
+           .replace( QString( "-" ), QString( "" ) )
+           .remove( 0, 1 )
+           .left( idSize );
 
     setupTextActions();
 
     m_textEdit = new Edit( this );
-    m_handler	 = new DBusHandler( m_id, privateSession, isolated, m_textEdit );
+    m_handler  = new DBusHandler( m_id, privateSession, isolated, m_textEdit );
     m_textEdit->setHandler( m_handler );
 
     QObject::connect( m_textEdit, &QTextEdit::currentCharFormatChanged, this,
@@ -24,7 +24,6 @@ MainWindow::MainWindow( const QString &privateSession, bool isolated, QWidget *p
 
     setToolbar();
 }
-
 
 void MainWindow::setupTextActions()
 {
@@ -70,7 +69,6 @@ void MainWindow::setupTextActions()
 
     m_comboFont = new QFontComboBox( tb );
     tb->addWidget( m_comboFont );
-//    connect( comboFont, &QComboBox::textActivated, this, &MainWindow::textFamily );
     connect( m_comboFont, QOverload<const QString &>::of( &QComboBox::activated ), this,
          &MainWindow::textFamily );
 
@@ -84,7 +82,6 @@ void MainWindow::setupTextActions()
         m_comboSize->addItem( QString::number( size ) );
     m_comboSize->setCurrentIndex( standardSizes.indexOf( QApplication::font().pointSize() ) );
 
-//    connect( comboSize, &QComboBox::textActivated, this, &MainWindow::textSize );
     connect( m_comboSize, QOverload<const QString &>::of( &QComboBox::activated ), this,
          &MainWindow::textSize );
 
@@ -97,27 +94,42 @@ void MainWindow::setupTextActions()
 //-------------toolbar events-------------------------
 void MainWindow::textBold() const
 {
-    m_handler->sendMessage( m_actionTextBold->isChecked(), "setBold" );
+    QTextCharFormat fmt;
+    fmt.setFontWeight( m_actionTextBold->isChecked() ? QFont::Bold : QFont::Normal );
+    m_handler->mergeFormatOnWordOrSelection( fmt );
 }
 
 void MainWindow::textUnderline() const
 {
-    m_handler->sendMessage( m_actionTextUnderline->isChecked(), "setUnderline" );
+    QTextCharFormat fmt;
+    fmt.setFontUnderline( m_actionTextUnderline->isChecked() ? true : false );
+    m_handler->mergeFormatOnWordOrSelection( fmt );
 }
 
 void MainWindow::textItalic() const
 {
-    m_handler->sendMessage( m_actionTextItalic->isChecked(), "setItalic" );
+    QTextCharFormat fmt;
+    fmt.setFontItalic( m_actionTextItalic->isChecked() ? true : false );
+    m_handler->mergeFormatOnWordOrSelection( fmt );
 }
 
 void MainWindow::textFamily( const QString &f ) const
 {
-    m_handler->sendMessage( f, "textFamily" );
+    m_textEdit->setFocus();
+    QTextCharFormat fmt;
+    fmt.setFontFamily( f );
+    m_handler->mergeFormatOnWordOrSelection( fmt );
 }
 
 void MainWindow::textSize( const QString &p ) const
 {
-    m_handler->sendMessage( p, "textSize" );
+    m_textEdit->setFocus();
+    qreal pointSize = p.toFloat();
+    if ( p.toFloat() > 0 ) {
+        QTextCharFormat fmt;
+        fmt.setFontPointSize( pointSize );
+        m_handler->mergeFormatOnWordOrSelection( fmt );
+    }
 }
 
 void MainWindow::textColor()
@@ -125,8 +137,10 @@ void MainWindow::textColor()
     QColor col = QColorDialog::getColor( m_textEdit->textColor(), this );
     if ( !col.isValid() )
         return;
-    col.name();
-    m_handler->sendMessage( col.name(), "textColor" );
+    amIchangeTheColor = true;
+    QTextCharFormat fmt;
+    fmt.setForeground( col );
+    m_handler->mergeFormatOnWordOrSelection( fmt );
 }
 //--------------------------------------
 void MainWindow::colorChanged( const QColor &c )
@@ -134,12 +148,20 @@ void MainWindow::colorChanged( const QColor &c )
     QPixmap pix( 16, 16 );
     pix.fill( c );
     m_actionTextColor->setIcon( pix );
+    if ( amIchangeTheColor ) {
+        m_textEdit->sendHtml();
+    }
+    amIchangeTheColor = false;
 }
 
 void MainWindow::currentCharFormatChanged( const QTextCharFormat &format )
 {
     fontChanged( format.font() );
     colorChanged( format.foreground().color() );
+    if ( m_textEdit->hasFocus() ) {
+        m_handler->sendMessageWithID( m_textEdit->textCursor().position(),
+                          "cursorPosition" );
+    }
 }
 
 void MainWindow::fontChanged( const QFont &f )

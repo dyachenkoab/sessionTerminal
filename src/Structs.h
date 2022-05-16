@@ -6,15 +6,10 @@
 enum Params { BOLD, UNDERLINE, ITALIC, SIZE, FONT, COLOR, POSITION };
 
 struct CharInfo {
-    QString key;
-    QString color;
-    QString fontString;
+    QString text;
+    int pos = -1;
 
-    CharInfo() {}
-    CharInfo( QString key, QString color, QString fontString )
-        : key( key ), color( color ), fontString( fontString )
-    {
-    }
+    CharInfo()			  = default;
     ~CharInfo()			  = default;
     CharInfo( const CharInfo &other ) = default;
     CharInfo &operator=( const CharInfo &other ) = default;
@@ -22,26 +17,23 @@ struct CharInfo {
     friend QDBusArgument &operator<<( QDBusArgument &argument, const CharInfo &info )
     {
         argument.beginStructure();
-        argument << info.key;
-        argument << info.color;
-        argument << info.fontString;
+        argument << info.text;
+        argument << info.pos;
         argument.endStructure();
         return argument;
     }
     friend const QDBusArgument &operator>>( const QDBusArgument &argument, CharInfo &info )
     {
         argument.beginStructure();
-        argument >> info.key;
-        argument >> info.color;
-        argument >> info.fontString;
+        argument >> info.text;
+        argument >> info.pos;
         argument.endStructure();
         return argument;
     }
 
     friend QDebug operator<<( QDebug dbg, const CharInfo &info )
     {
-        dbg << "key:" << info.key << "color:" << info.color
-            << "fontString:" << info.fontString;
+        dbg << "key:" << info.text << "position:" << info.pos;
         return dbg;
     }
 };

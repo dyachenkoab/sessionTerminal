@@ -8,8 +8,9 @@ QVariantList DBusHandler::getToolbarState() const
 
 DBusHandler::DBusHandler( const QString &id, const QString &privateSession, bool isolated,
               Edit *textEdit )
-    : m_id( id ), m_isolated( isolated ), m_conn( new QDBusConnection( QDBusConnection::sessionBus() ) ),
-      m_textEdit( textEdit ), m_sharedMemory( "SharedMemory" ), QObject( textEdit )
+    : m_id( id ), m_isolated( isolated ),
+      m_conn( new QDBusConnection( QDBusConnection::sessionBus() ) ), m_textEdit( textEdit ),
+      m_sharedMemory( "SharedMemory" ), QObject( textEdit )
 {
     setupDBusParameters( privateSession );
     registerClass();
@@ -26,20 +27,21 @@ void DBusHandler::setupDBusParameters( const QString &privateSession )
 {
     m_objName = "/test";
 
-    m_ifaceName	= privateSession.isEmpty() ? "test.session" : ( "test." + privateSession );
+    m_ifaceName   = privateSession.isEmpty() ? "test.session" : ( "test." + privateSession );
     m_serviceName = privateSession.isEmpty() ? ( "test.session._" + m_id )
-                       : ( "test." + privateSession + "._" + m_id );
+                         : ( "test." + privateSession + "._" + m_id );
 
     if ( m_isolated ) {
         m_serviceName = "test.isolated._" + m_id;
-        m_ifaceName	= "test.isolated";
-        m_rangedName	= m_serviceName;
+        m_ifaceName   = "test.isolated";
+        m_rangedName  = m_serviceName;
     }
 }
 
 void DBusHandler::registerClass()
 {
-    if ( !m_conn->registerObject( m_objName, m_ifaceName, this, QDBusConnection::ExportAllSlots ) ) {
+    if ( !m_conn->registerObject( m_objName, m_ifaceName, this,
+                      QDBusConnection::ExportAllSlots ) ) {
         fprintf( stderr, "%s\n",
              qPrintable( QDBusConnection::sessionBus().lastError().message() ) );
         exit( 0 );
@@ -51,7 +53,8 @@ void DBusHandler::registerClass()
         exit( 0 );
     }
 
-    m_iface.reset( new QDBusInterface( m_serviceName, m_objName, m_ifaceName, QDBusConnection::sessionBus() ) );
+    m_iface.reset( new QDBusInterface( m_serviceName, m_objName, m_ifaceName,
+                       QDBusConnection::sessionBus() ) );
     if ( !m_iface->isValid() ) {
         fprintf( stderr, "%s\n",
              qPrintable( QDBusConnection::sessionBus().lastError().message() ) );
@@ -65,25 +68,9 @@ void DBusHandler::registerClass()
 void DBusHandler::setupConnections()
 {
     m_conn->connect( m_rangedName, m_objName, m_ifaceName, "cursorPosition", this,
-               SLOT( changeCursorPosition( QString, int ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "keyPress", this,
-               SLOT( changeKey( QString, QVariantList ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "setSelection", this,
-               SLOT( setSelection( QString, int, int ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "removeChar", this, SLOT( removeChar( QString ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "deleteChar", this, SLOT( deleteChar( QString ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "insertHtml", this,
-               SLOT( htmlInsert( QString, QString ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "insertText", this,
-               SLOT( textInsert( QString, QString ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "selectAll", this, SLOT( selectAll( QString ) ) );
-
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "setBold", this, SLOT( bolded( bool ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "setUnderline", this, SLOT( underlined( bool ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "setItalic", this, SLOT( italiced( bool ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "textFamily", this, SLOT( textFamily( QString ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "textSize", this, SLOT( textSize( QString ) ) );
-    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "textColor", this, SLOT( textColored( QString ) ) );
+             SLOT( changeCursorPosition( QString, int ) ) );
+    m_conn->connect( m_rangedName, m_objName, m_ifaceName, "textChange", this,
+             SLOT( textChange( QString, QVariantList ) ) );
 }
 
 void DBusHandler::feedTextEditor()
@@ -104,47 +91,15 @@ void DBusHandler::feedTextEditor()
 }
 //------------accept signals---------------
 
-void DBusHandler::changeKey( const QString &id, const QVariantList &list )
+void DBusHandler::textChange( const QString &id, const QVariantList &list )
 {
     if ( id != this->m_id ) {
         CharInfo info = qdbus_cast<CharInfo>( list.at( 0 ) );
+        m_textEdit->clear();
+        m_textEdit->insertHtml( info.text );
         QTextCursor cursor( m_textEdit->textCursor() );
-        m_textEdit->insertPlainText( info.key );
-
-        QFont font;
-        font.fromString( info.fontString );
-
-        QTextCharFormat format;
-        QColor color( info.color );
-        format.setFont( font );
-        format.setForeground( color );
-
-        cursor.movePosition( QTextCursor::Left, QTextCursor::KeepAnchor );
-        cursor.mergeCharFormat( format );
-        m_textEdit->mergeCurrentCharFormat( format );
-    }
-}
-
-void DBusHandler::selectAll( const QString &id )
-{
-    if ( id != this->m_id ) {
-        QTextCursor cursor( m_textEdit->textCursor() );
-        cursor.select( QTextCursor::Document );
+        cursor.setPosition( info.pos );
         m_textEdit->setTextCursor( cursor );
-    }
-}
-
-void DBusHandler::removeChar( const QString &id )
-{
-    if ( id != this->m_id ) {
-        m_textEdit->textCursor().deletePreviousChar();
-    }
-}
-
-void DBusHandler::deleteChar( const QString &id )
-{
-    if ( id != this->m_id ) {
-        m_textEdit->textCursor().deleteChar();
     }
 }
 
@@ -152,75 +107,12 @@ void DBusHandler::changeCursorPosition( const QString &id, const int &pos )
 {
     if ( id != this->m_id ) {
         QTextCursor cursor( m_textEdit->textCursor() );
-        cursor.clearSelection();
         cursor.setPosition( pos );
         m_textEdit->setTextCursor( cursor );
     }
 }
 
-void DBusHandler::setSelection( const QString &id, int start, int stop )
-{
-    if ( id != this->m_id ) {
-        int delta = stop - start;
-        QTextCursor cursor( m_textEdit->textCursor() );
-        cursor.setPosition( stop );
-        cursor.movePosition( QTextCursor::Left, QTextCursor::KeepAnchor, delta );
-        m_textEdit->setTextCursor( cursor );
-    }
-}
-
-void DBusHandler::htmlInsert( const QString &id, const QString &html )
-{
-    if ( id != this->m_id ) {
-        m_textEdit->insertHtml( html );
-    }
-}
-
-void DBusHandler::textInsert( const QString &id, const QString &text )
-{
-    if ( id != this->m_id ) {
-        m_textEdit->insertPlainText( text );
-    }
-}
-
-void DBusHandler::bolded( bool bold )
-{
-    QTextCharFormat fmt;
-    fmt.setFontWeight( bold ? QFont::Bold : QFont::Normal );
-    mergeFormatOnWordOrSelection( fmt );
-}
-
-void DBusHandler::underlined( bool underline )
-{
-    QTextCharFormat fmt;
-    fmt.setFontUnderline( underline );
-    mergeFormatOnWordOrSelection( fmt );
-}
-
-void DBusHandler::italiced( bool italic )
-{
-    QTextCharFormat fmt;
-    fmt.setFontItalic( italic );
-    mergeFormatOnWordOrSelection( fmt );
-}
-
-void DBusHandler::textFamily( const QString &f )
-{
-    QTextCharFormat fmt;
-    fmt.setFontFamily( f );
-    mergeFormatOnWordOrSelection( fmt );
-}
-
-void DBusHandler::textSize( const QString &p )
-{
-    qreal pointSize = p.toFloat();
-    if ( p.toFloat() > 0 ) {
-        QTextCharFormat fmt;
-        fmt.setFontPointSize( pointSize );
-        mergeFormatOnWordOrSelection( fmt );
-    }
-}
-
+//-----text format---------
 void DBusHandler::textColored( const QString &c )
 {
     QTextCharFormat fmt;
@@ -237,6 +129,7 @@ void DBusHandler::mergeFormatOnWordOrSelection( const QTextCharFormat &format )
     cursor.mergeCharFormat( format );
     m_textEdit->mergeCurrentCharFormat( format );
 }
+//------------------------
 
 QVariantList DBusHandler::loadToSharedMemory()
 {

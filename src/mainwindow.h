@@ -39,6 +39,8 @@ private:
     QFontComboBox *m_comboFont;
     QComboBox *m_comboSize;
 
+    bool amIchangeTheColor = false;
+
 private:
     void setupTextActions();
     void textBold() const;
